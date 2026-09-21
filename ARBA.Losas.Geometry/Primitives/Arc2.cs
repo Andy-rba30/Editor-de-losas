@@ -13,8 +13,11 @@ namespace ARBA.Losas.Geometry
         public double Radius { get; }
         public double StartAngle { get; }
         public double SweepAngle { get; }
+        public CurveOrigin Origin { get; }
 
-        public Arc2(Vec2 center, double radius, double startAngle, double sweepAngle)
+        public Arc2(Vec2 center, double radius, double startAngle, double sweepAngle) : this(center, radius, startAngle, sweepAngle, null) { }
+
+        public Arc2(Vec2 center, double radius, double startAngle, double sweepAngle, CurveOrigin origin)
         {
             if (!(radius > 0)) throw new ArgumentException("El radio debe ser positivo.");
             if (sweepAngle == 0 || double.IsNaN(sweepAngle)) throw new ArgumentException("El barrido no puede ser cero.");
@@ -23,6 +26,7 @@ namespace ARBA.Losas.Geometry
             Radius = radius;
             StartAngle = startAngle;
             SweepAngle = sweepAngle;
+            Origin = origin;
         }
 
         /// <summary>
@@ -30,7 +34,9 @@ namespace ARBA.Losas.Geometry
         /// natural de traducir un Arc de Revit (extremos + punto medio) y garantiza que
         /// Start y End sean exactamente los puntos dados.
         /// </summary>
-        public static Arc2 FromThreePoints(Vec2 start, Vec2 onArc, Vec2 end)
+        public static Arc2 FromThreePoints(Vec2 start, Vec2 onArc, Vec2 end) => FromThreePoints(start, onArc, end, null);
+
+        public static Arc2 FromThreePoints(Vec2 start, Vec2 onArc, Vec2 end, CurveOrigin origin)
         {
             // circuncentro de los tres puntos
             double ax = start.X, ay = start.Y, bx = onArc.X, by = onArc.Y, cx = end.X, cy = end.Y;
@@ -50,7 +56,7 @@ namespace ARBA.Losas.Geometry
             double ccwMid = NormalizePositive(aMid - a0);
             double sweep = ccwMid <= ccw ? ccw : ccw - 2 * Math.PI;
             if (Math.Abs(sweep) < 1e-15) sweep = 2 * Math.PI; // inicio == fin: circunferencia completa
-            return new Arc2(center, r, a0, sweep);
+            return new Arc2(center, r, a0, sweep, origin);
         }
 
         private static double NormalizePositive(double angle)

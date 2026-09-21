@@ -59,5 +59,40 @@ namespace ARBA.Losas.Geometry
         }
 
         public void GetBounds(out Vec2 min, out Vec2 max) => Outer.GetBounds(out min, out max);
+
+        /// <summary>
+        /// True si el punto esta dentro del exterior y fuera de los huecos. Los arcos se
+        /// evaluan sobre un teselado fino; los puntos justo sobre el borde pueden caer a
+        /// cualquier lado.
+        /// </summary>
+        public bool Contains(Vec2 p)
+        {
+            if (!ContourContains(Outer, p)) return false;
+            foreach (Contour h in Holes)
+                if (ContourContains(h, p)) return false;
+            return true;
+        }
+
+        private static bool ContourContains(Contour contour, Vec2 p)
+        {
+            // regla par-impar sobre la polilinea del contorno
+            var pts = new List<Vec2>();
+            foreach (ICurve2 c in contour.Curves)
+            {
+                IReadOnlyList<CurvePoint> t = c.Tessellate(1e-4);
+                for (int i = 0; i < t.Count - 1; i++) pts.Add(t[i].Point);
+            }
+            bool inside = false;
+            for (int i = 0, j = pts.Count - 1; i < pts.Count; j = i++)
+            {
+                Vec2 a = pts[i], b = pts[j];
+                if ((a.Y > p.Y) != (b.Y > p.Y))
+                {
+                    double x = (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X;
+                    if (p.X < x) inside = !inside;
+                }
+            }
+            return inside;
+        }
     }
 }

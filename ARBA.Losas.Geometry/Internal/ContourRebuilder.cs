@@ -50,9 +50,9 @@ namespace ARBA.Losas.Geometry.Internal
             for (int i = 1; i < n; i++) if (edgeCurve[i] != edgeCurve[0]) { allSame = false; break; }
             if (allSame && edgeCurve[0] >= 0)
             {
-                ICurve2 whole = _table[edgeCurve[0]];
                 pts[1].TryGetT(edgeCurve[0], out double t1);
-                return new Contour(new[] { t1 < 0.5 ? whole : whole.Reversed() });
+                bool forward = t1 < 0.5;
+                return new Contour(new[] { BuildOnCurve(edgeCurve[0], pts[0], pts[0], forward ? 0 : 1, forward ? 1 : 0) });
             }
 
             // rotar para que el anillo empiece donde cambia la curva
@@ -95,20 +95,31 @@ namespace ARBA.Losas.Geometry.Internal
         /// <summary>Curva original <paramref name="curveId"/> recortada entre dos vertices canonicos, con los extremos exactamente en ellos.</summary>
         private ICurve2 BuildOnCurve(int curveId, RegistryPoint from, RegistryPoint to)
         {
-            Vec2 p0 = from.Position, p1 = to.Position;
-            if (p0 == p1) return null;
-            ICurve2 curve = _table[curveId];
-            if (curve is Segment2) return new Segment2(p0, p1);
             from.TryGetT(curveId, out double t0);
             to.TryGetT(curveId, out double t1);
-            // un vertice de union pertenece a la curva con T=0 (inicio) o T=1 (fin): elegir el sentido de recorrido
-            if (t0 == t1 || curve is not Arc2 arc) return new Segment2(p0, p1);
-            ICurve2 trimmed = arc.Trim(t0, t1);
-            if (trimmed.Start.IsAlmostEqual(p0, 1e-9) && trimmed.End.IsAlmostEqual(p1, 1e-9)) return trimmed;
+            return BuildOnCurve(curveId, from, to, t0, t1);
+        }
+
+        private ICurve2 BuildOnCurve(int curveId, RegistryPoint from, RegistryPoint to, double t0, double t1)
+        {
+            Vec2 p0 = from.Position, p1 = to.Position;
+            ICurve2 curve = _table[curveId];
+            bool whole = ReferenceEquals(from, to);
+            if (p0 == p1 && !whole) return null;
+            // procedencia en parametros de la curva de entrada (la tabla puede contener mitades de un arco grande)
+            CurveOrigin tableOrigin = _table.OriginOf(curveId);
+            var origin = new CurveOrigin(tableOrigin.Slab, tableOrigin.Curve,
+                tableOrigin.T0 + t0 * (tableOrigin.T1 - tableOrigin.T0),
+                tableOrigin.T0 + t1 * (tableOrigin.T1 - tableOrigin.T0));
+            if (curve is Segment2) return new Segment2(p0, p1, origin);
+            if (t0 == t1 || curve is not Arc2 arc) return new Segment2(p0, p1, origin);
+            Arc2 trimmed = (Arc2)arc.Trim(t0, t1);
+            if (whole || (trimmed.Start.IsAlmostEqual(p0, 1e-9) && trimmed.End.IsAlmostEqual(p1, 1e-9)))
+                return new Arc2(trimmed.Center, trimmed.Radius, trimmed.StartAngle, trimmed.SweepAngle, origin);
             // los extremos canonicos pueden diferir levemente del arco (fusiones): arco por tres puntos que pasa exactamente por ellos
             Vec2 mid = trimmed.PointAt(0.5);
-            try { return Arc2.FromThreePoints(p0, mid, p1); }
-            catch (ArgumentException) { return new Segment2(p0, p1); }
+            try { return Arc2.FromThreePoints(p0, mid, p1, origin); }
+            catch (ArgumentException) { return new Segment2(p0, p1, origin); }
         }
 
         /// <summary>Une tramos rectos consecutivos colineales y con el mismo sentido (tambien entre el ultimo y el primero).</summary>
@@ -126,7 +137,10 @@ namespace ARBA.Losas.Geometry.Internal
                     if (i == j) break;
                     if (result[i] is Segment2 s1 && result[j] is Segment2 s2 && AreCollinear(s1, s2))
                     {
-                        var merged = new Segment2(s1.Start, s2.End);
+                        CurveOrigin origin = null;
+                        if (s1.Origin != null && s2.Origin != null && s1.Origin.Slab == s2.Origin.Slab && s1.Origin.Curve == s2.Origin.Curve)
+                            origin = new CurveOrigin(s1.Origin.Slab, s1.Origin.Curve, s1.Origin.T0, s2.Origin.T1);
+                        var merged = new Segment2(s1.Start, s2.End, origin);
                         if (j > i) { result[i] = merged; result.RemoveAt(j); }
                         else { result[j] = merged; result.RemoveAt(i); }
                         changed = true;

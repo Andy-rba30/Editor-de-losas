@@ -222,5 +222,43 @@ namespace ARBA.Losas.Geometry.Tests
                 foreach (Vec2 v in p.Outer.Vertices.Where(v => v.X > 10.001 || Math.Abs(v.Y - 2.5) < 1e-9))
                     Assert.Contains(r.Regions.Where(q => !ReferenceEquals(q, p)), q => q.Outer.Vertices.Any(w => w == v));
         }
+            [Fact]
+        public void RebuiltCurves_CarryOriginOfInputCurve()
+        {
+            Polygon2 slab = RectangleWithArc(); // curvas de entrada: 0 base, 1 arco, 2 tapa, 3 lado izquierdo
+            SplitResult r = SlabSplitter.Split(slab, new[] { Vertical(11) }, Default);
+            Arc2 input = (Arc2)slab.Outer.Curves[1];
+            foreach (Polygon2 p in r.Regions)
+            {
+                // la pieza izquierda conserva dos trozos del arco (arriba y abajo del corte), la derecha uno
+                Assert.NotEmpty(p.Outer.Curves.OfType<Arc2>());
+                foreach (Arc2 arc in p.Outer.Curves.OfType<Arc2>())
+                {
+                    Assert.NotNull(arc.Origin);
+                    Assert.Equal(0, arc.Origin.Slab);
+                    Assert.Equal(1, arc.Origin.Curve);
+                    // el tramo del arco original entre esos parametros coincide con el arco reconstruido
+                    Assert.True(input.PointAt(arc.Origin.T0).IsAlmostEqual(arc.Start, 1e-6));
+                    Assert.True(input.PointAt(arc.Origin.T1).IsAlmostEqual(arc.End, 1e-6));
+                }
+                // el corte es un tramo nuevo sin origen
+                Assert.Contains(p.Outer.Curves, c => c.Origin == null && c is Segment2 s && Math.Abs(s.Start.X - s.End.X) < 1e-3);
+                // el lado izquierdo entero conserva su origen completo
+                Segment2 leftSide = p.Outer.Curves.OfType<Segment2>().FirstOrDefault(s => s.Origin != null && s.Origin.Curve == 3);
+                if (leftSide != null) Assert.True(leftSide.Origin.IsWholeForward);
+            }
+        }
+
+        [Fact]
+        public void Polygon_Contains_RespectsHolesAndArcs()
+        {
+            Polygon2 hole = SquareWithHole();
+            Assert.True(hole.Contains(new Vec2(1, 1)));
+            Assert.False(hole.Contains(new Vec2(5, 5)));
+            Assert.False(hole.Contains(new Vec2(11, 5)));
+            Polygon2 arc = RectangleWithArc();
+            Assert.True(arc.Contains(new Vec2(12, 2.5)));
+            Assert.False(arc.Contains(new Vec2(12, 4.9)));
+        }
     }
 }

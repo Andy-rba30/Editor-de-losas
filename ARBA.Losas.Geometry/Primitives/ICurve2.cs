@@ -20,6 +20,9 @@ namespace ARBA.Losas.Geometry
         Vec2 End { get; }
         double Length { get; }
 
+        /// <summary>Curva de entrada de la que procede este tramo, o null si es un tramo nuevo (corte).</summary>
+        CurveOrigin Origin { get; }
+
         /// <summary>Punto en el parametro normalizado <paramref name="t"/> (se admite fuera de 0..1 para lineas).</summary>
         Vec2 PointAt(double t);
 

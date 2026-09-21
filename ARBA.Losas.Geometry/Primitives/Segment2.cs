@@ -8,12 +8,16 @@ namespace ARBA.Losas.Geometry
     {
         public Vec2 Start { get; }
         public Vec2 End { get; }
+        public CurveOrigin Origin { get; }
 
-        public Segment2(Vec2 start, Vec2 end)
+        public Segment2(Vec2 start, Vec2 end) : this(start, end, null) { }
+
+        public Segment2(Vec2 start, Vec2 end, CurveOrigin origin)
         {
             if (start == end) throw new ArgumentException("Un segmento necesita dos puntos distintos.");
             Start = start;
             End = end;
+            Origin = origin;
         }
 
         public Vec2 Direction => (End - Start).Normalized();

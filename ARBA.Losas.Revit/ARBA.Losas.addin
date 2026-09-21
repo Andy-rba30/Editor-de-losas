@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <!-- Aplicacion: anade a la pestana "ARBA" el panel "Losas" con Dividir Losa, Unir Losas y Configuracion -->
+  <AddIn Type="Application">
+    <Name>ARBA Losas</Name>
+    <Assembly>ARBA.Losas\ARBA.Losas.Revit.dll</Assembly>
+    <FullClassName>ARBA.Losas.Revit.App</FullClassName>
+    <ClientId>7f2c1b6e-9a3d-4c58-b1e7-2d64f0a9c315</ClientId>
+    <VendorId>LOCAL</VendorId>
+    <VendorDescription>Uso interno</VendorDescription>
+  </AddIn>
+  <!-- Comandos: tambien en Complementos > Herramientas externas, por si no se quiere la cinta -->
+  <AddIn Type="Command">
+    <Name>ARBA Dividir losa</Name>
+    <Text>Dividir losa</Text>
+    <Description>Divide una losa en varias losas independientes segun lineas de corte dibujadas o seleccionadas.</Description>
+    <Assembly>ARBA.Losas\ARBA.Losas.Revit.dll</Assembly>
+    <FullClassName>ARBA.Losas.Revit.Commands.SplitFloorCommand</FullClassName>
+    <ClientId>a41d8e77-5b2c-4f0e-8d93-6c1a2f7e4b58</ClientId>
+    <VendorId>LOCAL</VendorId>
+    <VendorDescription>Uso interno</VendorDescription>
+    <VisibilityMode>NotVisibleInFamily</VisibilityMode>
+  </AddIn>
+  <AddIn Type="Command">
+    <Name>ARBA Unir losas</Name>
+    <Text>Unir losas</Text>
+    <Description>Une dos o mas losas compatibles (mismo tipo, nivel, desfase y flag estructural) en una sola.</Description>
+    <Assembly>ARBA.Losas\ARBA.Losas.Revit.dll</Assembly>
+    <FullClassName>ARBA.Losas.Revit.Commands.MergeFloorsCommand</FullClassName>
+    <ClientId>c93e5a12-7d4f-4b86-a2c1-8e5b3f6d0a79</ClientId>
+    <VendorId>LOCAL</VendorId>
+    <VendorDescription>Uso interno</VendorDescription>
+    <VisibilityMode>NotVisibleInFamily</VisibilityMode>
+  </AddIn>
+  <AddIn Type="Command">
+    <Name>ARBA Losas configuracion</Name>
+    <Text>Configuracion de losas</Text>
+    <Description>Opciones de division y union de losas (se guardan en %AppData%\ARBA\Losas\settings.json).</Description>
+    <Assembly>ARBA.Losas\ARBA.Losas.Revit.dll</Assembly>
+    <FullClassName>ARBA.Losas.Revit.Commands.SettingsCommand</FullClassName>
+    <ClientId>e6b0f4d9-1c8a-4e27-9f35-4a7d2b8c6e01</ClientId>
+    <VendorId>LOCAL</VendorId>
+    <VendorDescription>Uso interno</VendorDescription>
+    <VisibilityMode>NotVisibleInFamily</VisibilityMode>
+  </AddIn>
+</RevitAddIns>

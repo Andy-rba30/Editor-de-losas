@@ -11,20 +11,21 @@ namespace ARBA.Losas.Geometry.Internal
     {
         public static Region Tessellate(Polygon2 polygon, CurveTable table, PointRegistry reg, double tolerance, int slab)
         {
-            Ring outer = TessellateContour(polygon.Outer, table, reg, tolerance, slab);
+            int curveIndex = 0;
+            Ring outer = TessellateContour(polygon.Outer, table, reg, tolerance, slab, ref curveIndex);
             var holes = new List<Ring>();
-            foreach (Contour h in polygon.Holes) holes.Add(TessellateContour(h, table, reg, tolerance, slab));
+            foreach (Contour h in polygon.Holes) holes.Add(TessellateContour(h, table, reg, tolerance, slab, ref curveIndex));
             return new Region(outer, holes);
         }
 
-        private static Ring TessellateContour(Contour contour, CurveTable table, PointRegistry reg, double tolerance, int slab)
+        private static Ring TessellateContour(Contour contour, CurveTable table, PointRegistry reg, double tolerance, int slab, ref int curveIndex)
         {
             var ring = new Ring();
             int firstId = -1, prevId = -1;
             RegistryPoint firstVertex = null;
-            foreach (ICurve2 curve in SplitLargeArcs(contour.Curves))
+            foreach ((ICurve2 curve, CurveOrigin origin) in SplitLargeArcs(contour.Curves, slab, ref curveIndex))
             {
-                int id = table.Add(curve);
+                int id = table.Add(curve, origin);
                 if (firstId < 0) firstId = id;
                 IReadOnlyList<CurvePoint> pts = curve.Tessellate(tolerance);
                 // el ultimo punto de cada curva es el primero de la siguiente: no se repite
@@ -53,17 +54,20 @@ namespace ARBA.Losas.Geometry.Internal
         /// sobre una misma curva puede "dar la vuelta" por su union (caso de la circunferencia
         /// completa) y el recorte por parametros queda sin ambiguedad.
         /// </summary>
-        private static IEnumerable<ICurve2> SplitLargeArcs(IReadOnlyList<ICurve2> curves)
+        private static List<(ICurve2, CurveOrigin)> SplitLargeArcs(IReadOnlyList<ICurve2> curves, int slab, ref int curveIndex)
         {
+            var result = new List<(ICurve2, CurveOrigin)>();
             foreach (ICurve2 c in curves)
             {
+                int index = curveIndex++;
                 if (c is Arc2 arc && System.Math.Abs(arc.SweepAngle) > System.Math.PI + 1e-12)
                 {
-                    yield return arc.Trim(0, 0.5);
-                    yield return arc.Trim(0.5, 1);
+                    result.Add((arc.Trim(0, 0.5), new CurveOrigin(slab, index, 0, 0.5)));
+                    result.Add((arc.Trim(0.5, 1), new CurveOrigin(slab, index, 0.5, 1)));
                 }
-                else yield return c;
+                else result.Add((c, new CurveOrigin(slab, index, 0, 1)));
             }
+            return result;
         }
     }
 }
