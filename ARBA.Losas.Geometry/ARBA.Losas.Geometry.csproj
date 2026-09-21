@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Geometria pura del add-in: poligonos con contorno y huecos, teselado de arcos,
+    division por lineas de corte y union de losas con Clipper2. No conoce Revit
+    (ni XYZ, ni CurveLoop, ni Document), por eso es net10.0 a secas y se prueba
+    con xUnit en cualquier sistema.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>ARBA.Losas.Geometry</AssemblyName>
+    <RootNamespace>ARBA.Losas.Geometry</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Clipper2" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ARBA.Losas.Geometry.Tests" />
+  </ItemGroup>
+
+</Project>
