@@ -41,6 +41,12 @@ namespace ARBA.Losas.Revit.Commands
                 message = "Error de Revit en " + title + ": " + ex.Message;
                 return Result.Failed;
             }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is NullReferenceException)
+            {
+                // fallo de la geometria o de la traduccion: se reporta con detalle; el TransactionGroup ya se deshizo
+                message = "Error interno en " + title + ": " + ex.GetType().Name + ": " + ex.Message + "\n" + ex.StackTrace;
+                return Result.Failed;
+            }
         }
     }
 }
